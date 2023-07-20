@@ -1,5 +1,6 @@
 package com.bdelas.microservice3gateway.security;
 
+import com.bdelas.microservice3gateway.security.jwt.JwtAuthorizationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @EnableWebSecurity
 @Configuration
@@ -34,14 +36,31 @@ public class SecurityConfig {
         auth.userDetailsService(customUserDetailsService).passwordEncoder(passwordEncoder);
 
         AuthenticationManager authenticationManager= auth.build();
-
+/*
         http.csrf()
                 .disable().cors()
                 .disable().authorizeHttpRequests()
                 .antMatchers("/api/authentication/sign-in","/api/authentication/sign-up").permitAll()
                 .and()
                 .authenticationManager(authenticationManager).sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        return http.build();
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);*/
+
+        return http.antMatcher("/api/authentication/**")
+                .authorizeRequests()
+                .anyRequest()
+                .authenticated()
+                .and()
+                .cors().and().csrf().disable()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .authenticationManager(authenticationManager)
+                .addFilterBefore(jwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+    @Bean
+    public JwtAuthorizationFilter jwtAuthorizationFilter(){
+        return new JwtAuthorizationFilter();
     }
 }
